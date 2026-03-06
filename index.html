@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>拼豆图纸生成器</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Bead Pattern Studio</p>
+          <h1>上传图片，自动生成可筛色的拼豆图纸</h1>
+          <p class="hero-copy">
+            把任意图片转换成拼豆配色和网格图纸，并按颜色单独显示或隐藏，方便分批制作。
+          </p>
+        </div>
+        <div class="hero-card">
+          <p class="hero-card-label">当前流程</p>
+          <ol>
+            <li>上传图片</li>
+            <li>设置拼豆尺寸</li>
+            <li>查看颜色统计</li>
+            <li>按颜色筛选图纸</li>
+          </ol>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="panel controls-panel">
+          <div class="section-title">
+            <h2>生成设置</h2>
+            <p>建议先从 32 到 64 粒宽度开始，便于控制细节和制作时间。</p>
+          </div>
+
+          <label class="upload-box" for="imageInput">
+            <input id="imageInput" type="file" accept="image/*" />
+            <span>点击上传图片</span>
+            <small>支持 PNG、JPG、WEBP 等常见格式</small>
+          </label>
+
+          <div class="control-grid">
+            <label>
+              <span>图纸宽度（粒）</span>
+              <input id="beadWidth" type="range" min="16" max="128" value="48" />
+              <strong id="beadWidthValue">48</strong>
+            </label>
+
+            <label>
+              <span>图纸高度（粒）</span>
+              <input id="beadHeight" type="number" min="1" value="48" />
+            </label>
+
+            <label class="checkbox-row">
+              <input id="lockAspect" type="checkbox" checked />
+              <span>锁定原图比例</span>
+            </label>
+
+            <label>
+              <span>颜色库</span>
+              <select id="paletteLibrary">
+                <option value="full">221 色</option>
+                <option value="168">168 色</option>
+                <option value="144">144 色</option>
+                <option value="72">72 色</option>
+              </select>
+            </label>
+
+            <label>
+              <span>颜色数量</span>
+              <input id="paletteSize" type="number" min="1" value="12" />
+              <strong id="paletteSizeValue">12</strong>
+            </label>
+
+            <label>
+              <span>网格像素</span>
+              <input id="cellSize" type="range" min="10" max="28" value="25" />
+              <strong id="cellSizeValue">25</strong>
+            </label>
+
+            <label class="checkbox-row">
+              <input id="showCodes" type="checkbox" checked />
+              <span>在图纸中显示颜色编号</span>
+            </label>
+          </div>
+
+          <button id="generateButton" class="primary-button" disabled>生成拼豆图纸</button>
+          <button id="savePatternButton" class="ghost-button" disabled>保存图纸图片</button>
+
+          <div class="edit-panel">
+            <div class="section-title">
+              <h2>手动改色</h2>
+              <p>点击右侧图纸中的格子后，可以单独替换该拼豆颜色。</p>
+            </div>
+            <p id="selectedCellInfo" class="selected-cell-info">未选中格子</p>
+            <label class="checkbox-row">
+              <input id="brushMode" type="checkbox" />
+              <span>画笔模式</span>
+            </label>
+            <label>
+              <span>替换颜色</span>
+              <select id="cellColorSelect" disabled></select>
+            </label>
+            <div class="edit-actions">
+              <button id="applyCellColorButton" class="ghost-button" disabled>应用到选中格子</button>
+              <button id="clearSelectionButton" class="ghost-button" disabled>取消选中</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel stats-panel">
+          <div class="section-title">
+            <h2>图纸信息</h2>
+            <p id="summaryText">上传图片后会显示尺寸、总粒数和颜色统计。</p>
+          </div>
+          <div id="statsCards" class="stats-cards">
+            <article>
+              <span>图纸尺寸</span>
+              <strong>0 × 0</strong>
+            </article>
+            <article>
+              <span>总粒数</span>
+              <strong>0</strong>
+            </article>
+            <article>
+              <span>颜色数</span>
+              <strong>0</strong>
+            </article>
+          </div>
+          <div class="filter-header">
+            <h3>颜色筛选</h3>
+            <button id="toggleAllColors" class="ghost-button" disabled>全选 / 全不选</button>
+          </div>
+          <div id="paletteLegend" class="palette-legend empty-state">
+            生成后这里会显示颜色列表和用量。
+          </div>
+        </section>
+
+        <section class="panel canvas-panel">
+          <div class="section-title">
+            <h2>预览与图纸</h2>
+            <p>左侧是原图预览，右侧是按拼豆颜色映射后的结果和可筛选图纸。</p>
+          </div>
+          <div class="canvas-grid">
+            <div class="canvas-card">
+              <h3>采样原图</h3>
+              <canvas id="sourceCanvas" width="480" height="480"></canvas>
+            </div>
+            <div class="canvas-card">
+              <h3>拼豆预览</h3>
+              <canvas id="previewCanvas" width="480" height="480"></canvas>
+            </div>
+          </div>
+          <div class="canvas-card pattern-card">
+            <div class="pattern-header">
+              <h3>拼豆图纸</h3>
+              <p>隐藏颜色后，图纸会用浅色空位保留结构。</p>
+            </div>
+            <div class="pattern-frame">
+              <canvas id="patternCanvas" width="720" height="720"></canvas>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+  </html>
